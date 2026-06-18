@@ -1,0 +1,211 @@
+services:
+
+  #baza podataka
+
+  user-db:
+    image: postgres:15
+    container_name: user-db
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user_user
+      POSTGRES_PASSWORD: user_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    networks:
+      - marketplace-network
+
+  product-db:
+    image: postgres:15
+    container_name: product-db
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - product-db-data:/var/lib/postgresql/data
+    networks:
+      - marketplace-network
+
+  order-db:
+    image: postgres:15
+    container_name: order-db
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    networks:
+      - marketplace-network
+
+  notification-db:
+    image: mongo:7
+    container_name: notification-db
+    environment:
+      MONGO_INITDB_DATABASE: notification_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - notification-db-data:/data/db
+    networks:
+      - marketplace-network
+
+  #kafka
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - marketplace-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - marketplace-network
+
+  #monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - marketplace-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - marketplace-network
+
+  #mikroservisi
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    depends_on:
+      - user-db
+    environment:
+      DATABASE_URL: postgresql://user_user:user_pass@user-db:5432/user_db
+      SECRET_KEY: super-secret-key-change-in-production
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+    ports:
+      - "8001:8000"
+    networks:
+      - marketplace-network
+
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    depends_on:
+      - product-db
+      - kafka
+    environment:
+      DATABASE_URL: postgresql://product_user:product_pass@product-db:5432/product_db
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY}
+    ports:
+      - "8002:8000"
+    networks:
+      - marketplace-network
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    depends_on:
+      - order-db
+      - kafka
+    environment:
+      DATABASE_URL: postgresql://order_user:order_pass@order-db:5432/order_db
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    ports:
+      - "8003:8000"
+    networks:
+      - marketplace-network
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    depends_on:
+      - notification-db
+      - kafka
+    environment:
+      MONGODB_URL: mongodb://notification-db:27017/notification_db
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8004:8000"
+    networks:
+      - marketplace-network
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - notification-service
+    environment:
+      USER_SERVICE_URL: http://user-service:8000
+      PRODUCT_SERVICE_URL: http://product-service:8000
+      ORDER_SERVICE_URL: http://order-service:8000
+      NOTIFICATION_SERVICE_URL: http://notification-service:8000
+    ports:
+      - "8000:8000"
+    networks:
+      - marketplace-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    depends_on:
+      - api-gateway
+    ports:
+      - "3000:3000"
+    networks:
+      - marketplace-network
+
+#volumes & networks
+
+volumes:
+  user-db-data:
+  product-db-data:
+  order-db-data:
+  notification-db-data:
+  grafana-data:
+
+networks:
+  marketplace-network:
+    driver: bridge
