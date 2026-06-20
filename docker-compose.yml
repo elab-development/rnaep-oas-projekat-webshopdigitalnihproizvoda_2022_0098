@@ -135,6 +135,7 @@ services:
       DATABASE_URL: postgresql://product_user:product_pass@product-db:5432/product_db
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY}
+      SECRET_KEY: super-secret-key-change-in-production
     ports:
       - "8002:8000"
     networks:
