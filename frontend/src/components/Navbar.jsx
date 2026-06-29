@@ -31,6 +31,9 @@ export default function Navbar() {
             {user.role === 'seller' && (
               <Link to="/my-products" className="hover:underline">Moji proizvodi</Link>
             )}
+            {user.role === 'admin' && (
+              <Link to="/admin" className="hover:underline">Admin Panel</Link>
+            )}
             {user.role === 'buyer' && (
               <Link to="/my-purchases" className="hover:underline">Moje kupovine</Link>
             )}

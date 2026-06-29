@@ -9,6 +9,7 @@ import ProductDetail from './pages/ProductDetail'
 import MyPurchases from './pages/MyPurchases.jsx'
 import MyProducts from './pages/MyProducts'
 import Notifications from './pages/Notifications'
+import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/my-purchases" element={<MyPurchases />} />
           <Route path="/my-products" element={<MyProducts />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </div>
     </AuthProvider>
