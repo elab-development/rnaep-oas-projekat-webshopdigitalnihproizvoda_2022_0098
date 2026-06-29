@@ -105,6 +105,11 @@ services:
       - "3001:3000"
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboard.json:/etc/grafana/dashboards/dashboard.json
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
     networks:
       - marketplace-network
 
@@ -166,6 +171,7 @@ services:
     environment:
       MONGODB_URL: mongodb://notification-db:27017/notification_db
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SECRET_KEY: super-secret-key-change-in-production
     ports:
       - "8004:8000"
     networks:
