@@ -10,7 +10,7 @@ export default function Home() {
         Dobrodošli na Digital Marketplace
       </h1>
       <p className="text-gray-600 text-lg mb-8 max-w-xl">
-        Platforma za kupovinu i prodaju digitalnih proizvoda — kursevi, e-knjige, template-i i još mnogo toga.
+        Platforma za kupovinu i prodaju digitalnih proizvoda: kursevi, e-knjige, template-i i još mnogo toga.
       </p>
       <div className="flex gap-4">
         <Link to="/products" className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700">

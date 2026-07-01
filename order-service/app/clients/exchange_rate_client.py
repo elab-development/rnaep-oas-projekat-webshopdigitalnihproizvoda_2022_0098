@@ -3,10 +3,6 @@ from decimal import Decimal
 from app.config import settings
 
 async def get_prices_in_currencies(amount_rsd: Decimal) -> dict:
-    """
-    Konvertuje cenu iz RSD u EUR i USD koristeći Frankfurter API.
-    Vraća fallback (1:1) ako API nije dostupan — štiti tok kupovine.
-    """
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(
@@ -15,11 +11,23 @@ async def get_prices_in_currencies(amount_rsd: Decimal) -> dict:
             )
             response.raise_for_status()
             data = response.json()
-            rates = data["rates"]
+            print(f"Frankfurter API response: {data}")
+            rates = data.get("rates", {})
+            eur_rate = rates.get("EUR")
+            usd_rate = rates.get("USD")
+
+            if not eur_rate or not usd_rate:
+                raise ValueError("Missing rates in response")
+
             return {
-                "RSD": amount_rsd,
-                "EUR": round(amount_rsd * Decimal(str(rates["EUR"])), 2),
-                "USD": round(amount_rsd * Decimal(str(rates["USD"])), 2)
+                "RSD": float(round(amount_rsd, 2)),
+                "EUR": float(round(amount_rsd * Decimal(str(eur_rate)), 2)),
+                "USD": float(round(amount_rsd * Decimal(str(usd_rate)), 2))
             }
-    except (httpx.HTTPError, KeyError):
-        return {"RSD": amount_rsd, "EUR": amount_rsd, "USD": amount_rsd}
+    except Exception as e:
+        print(f"Exchange rate error: {e}")
+        return {
+            "RSD": float(amount_rsd),
+            "EUR": float(round(amount_rsd * Decimal("0.0085"), 2)),
+            "USD": float(round(amount_rsd * Decimal("0.0093"), 2))
+        }
