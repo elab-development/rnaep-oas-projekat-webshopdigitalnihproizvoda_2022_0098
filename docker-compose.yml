@@ -1,6 +1,6 @@
 services:
 
-  #baza podataka
+  #baze
 
   user-db:
     image: postgres:15
@@ -15,6 +15,11 @@ services:
       - user-db-data:/var/lib/postgresql/data
     networks:
       - marketplace-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_user -d user_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   product-db:
     image: postgres:15
@@ -29,6 +34,11 @@ services:
       - product-db-data:/var/lib/postgresql/data
     networks:
       - marketplace-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_user -d product_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   order-db:
     image: postgres:15
@@ -43,6 +53,11 @@ services:
       - order-db-data:/var/lib/postgresql/data
     networks:
       - marketplace-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   notification-db:
     image: mongo:7
@@ -119,7 +134,8 @@ services:
     build: ./user-service
     container_name: user-service
     depends_on:
-      - user-db
+      user-db:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://user_user:user_pass@user-db:5432/user_db
       SECRET_KEY: super-secret-key-change-in-production
@@ -134,8 +150,10 @@ services:
     build: ./product-service
     container_name: product-service
     depends_on:
-      - product-db
-      - kafka
+      product-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://product_user:product_pass@product-db:5432/product_db
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -150,8 +168,10 @@ services:
     build: ./order-service
     container_name: order-service
     depends_on:
-      - order-db
-      - kafka
+      order-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://order_user:order_pass@order-db:5432/order_db
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -205,7 +225,7 @@ services:
     networks:
       - marketplace-network
 
-#volumes & networks
+#volumes, networks
 
 volumes:
   user-db-data:

@@ -16,7 +16,14 @@ export default function MyProducts() {
   const handleCreate = async (e) => {
     e.preventDefault()
     try {
-      await api.post('/api/products/', form)
+      const productData = {
+        name: form.name,
+        description: form.description,
+        price: parseFloat(form.price),
+        file_path: form.file_path,
+        category_id: form.category_id || null
+      }
+      await api.post('/api/products/', productData)
       setMessage('Proizvod uspešno kreiran!')
       api.get('/api/products/seller/my-products').then(res => setProducts(res.data))
     } catch (err) {
