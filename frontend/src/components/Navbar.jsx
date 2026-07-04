@@ -45,7 +45,7 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-            <span className="text-sm">{user.first_name}</span>
+            <Link to="/profile" className="text-sm hover:underline">{user.first_name}</Link>
             <button onClick={handleLogout} className="bg-white text-indigo-600 px-3 py-1 rounded hover:bg-gray-100">
               Odjavi se
             </button>
