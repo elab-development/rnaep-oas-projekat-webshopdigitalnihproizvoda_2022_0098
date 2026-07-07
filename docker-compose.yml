@@ -101,16 +101,6 @@ services:
     networks:
       - marketplace-network
 
-  kafka-init:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka-init
-    depends_on:
-      - kafka
-    entrypoint: ["/bin/bash", "/kafka-init.sh"]
-    volumes:
-      - ./kafka-init.sh:/kafka-init.sh
-    networks:
-      - marketplace-network
 
   #monitoring
 
