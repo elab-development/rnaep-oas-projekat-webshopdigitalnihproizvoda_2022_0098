@@ -96,6 +96,19 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CREATE_TOPICS: "order-created:1:1,payment-confirmed:1:1,payment-failed:1:1,download-unlocked:1:1,product-created:1:1"
+    networks:
+      - marketplace-network
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-init
+    depends_on:
+      - kafka
+    entrypoint: ["/bin/bash", "/kafka-init.sh"]
+    volumes:
+      - ./kafka-init.sh:/kafka-init.sh
     networks:
       - marketplace-network
 
