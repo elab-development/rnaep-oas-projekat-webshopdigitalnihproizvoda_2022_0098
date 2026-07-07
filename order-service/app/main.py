@@ -5,9 +5,32 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.database import Base, engine
 from app.routers import order_router
 from app.services.kafka_producer import kafka_producer
+from app.config import settings
+from aiokafka.admin import AIOKafkaAdminClient, NewTopic
+
+async def create_kafka_topics():
+    try:
+        admin = AIOKafkaAdminClient(
+            bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS
+        )
+        await admin.start()
+        topics = [
+            NewTopic(name="order-created", num_partitions=1, replication_factor=1),
+            NewTopic(name="payment-confirmed", num_partitions=1, replication_factor=1),
+            NewTopic(name="payment-failed", num_partitions=1, replication_factor=1),
+            NewTopic(name="download-unlocked", num_partitions=1, replication_factor=1),
+            NewTopic(name="product-created", num_partitions=1, replication_factor=1),
+        ]
+        await admin.create_topics(topics)
+        print("Kafka topics created successfully!")
+    except Exception as e:
+        print(f"Kafka topics already exist or error: {e}")
+    finally:
+        await admin.close()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await create_kafka_topics()
     await kafka_producer.start()
     yield
     await kafka_producer.stop()
