@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import api from '../api/axios'
 
 export default function MyProducts() {
+  const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [stats, setStats] = useState([])
   const [form, setForm] = useState({ name: '', description: '', price: '', category_id: '', file_path: '' })
@@ -11,6 +12,7 @@ export default function MyProducts() {
   useEffect(() => {
     api.get('/api/products/seller/my-products').then(res => setProducts(res.data)).catch(() => {})
     api.get('/api/orders/seller/stats').then(res => setStats(res.data)).catch(() => {})
+    api.get('/api/products/categories').then(res => setCategories(res.data)).catch(() => {})
   }, [])
 
   const handleCreate = async (e) => {
@@ -48,6 +50,15 @@ export default function MyProducts() {
           <input type="number" placeholder="Cena (RSD)" value={form.price}
             onChange={e => setForm({...form, price: e.target.value})}
             className="w-full border rounded px-3 py-2" required />
+          <select value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})}
+            className="w-full border rounded px-3 py-2">
+            <option value="">Bez kategorije</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
           <input type="text" placeholder="Putanja do fajla (npr. /files/kurs.pdf)" value={form.file_path}
             onChange={e => setForm({...form, file_path: e.target.value})}
             className="w-full border rounded px-3 py-2" required />
