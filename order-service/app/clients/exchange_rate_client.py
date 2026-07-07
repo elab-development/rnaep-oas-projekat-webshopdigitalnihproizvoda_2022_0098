@@ -11,7 +11,7 @@ async def get_prices_in_currencies(amount_rsd: Decimal) -> dict:
             )
             response.raise_for_status()
             data = response.json()
-            print(f"Frankfurter API response: {data}")
+            print(f"Exchange Rates API response: {data}")
             rates = data.get("rates", {})
             eur_rate = rates.get("EUR")
             usd_rate = rates.get("USD")
