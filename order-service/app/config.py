@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str = "kafka:29092"
     SECRET_KEY: str = "super-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    EXCHANGE_RATE_API_URL: str = "https://api.frankfurter.app"
+    EXCHANGE_RATE_API_URL: str = "https://api.frankfurter.dev/v1"
 
     class Config:
         env_file = ".env"

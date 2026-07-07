@@ -15,12 +15,10 @@ TOPICS = [
 ]
 
 async def handle_event(topic: str, data: dict):
-    """Kreira notifikaciju na osnovu tipa Kafka događaja."""
     collection = get_collection()
     repo = NotificationRepository(collection)
 
     if topic == "payment-confirmed":
-        # Notifikacija za kupca
         await repo.create(Notification(
             user_id=data["buyer_id"],
             type=NotificationType.order_confirmed,
@@ -28,7 +26,6 @@ async def handle_event(topic: str, data: dict):
             message=f"Uspešno ste kupili proizvod. Iznos: {data['amount']} RSD",
             metadata={"order_id": data["order_id"], "product_id": data["product_id"]}
         ))
-        # Notifikacija za prodavca
         await repo.create(Notification(
             user_id=data["seller_id"],
             type=NotificationType.new_sale,
@@ -65,16 +62,31 @@ async def handle_event(topic: str, data: dict):
         ))
 
 async def start_kafka_consumer():
-    """Pokreće Kafka consumer koji sluša sve relevantne topice."""
-    consumer = AIOKafkaConsumer(
-        *TOPICS,
-        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
-        group_id="notification-service-group",
-        value_deserializer=lambda v: json.loads(v.decode("utf-8")),
-        auto_offset_reset="earliest"
-    )
+    retries = 0
+    max_retries = 10
+    consumer = None
 
-    await consumer.start()
+    while retries < max_retries:
+        try:
+            consumer = AIOKafkaConsumer(
+                *TOPICS,
+                bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
+                group_id="notification-service-group",
+                value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+                auto_offset_reset="earliest"
+            )
+            await consumer.start()
+            print("Kafka consumer started successfully!")
+            break
+        except Exception as e:
+            retries += 1
+            print(f"Kafka consumer connection attempt {retries}/{max_retries} failed: {e}")
+            await asyncio.sleep(5)
+
+    if consumer is None:
+        print("Could not connect Kafka consumer after max retries")
+        return
+
     try:
         async for message in consumer:
             await handle_event(message.topic, message.value)
