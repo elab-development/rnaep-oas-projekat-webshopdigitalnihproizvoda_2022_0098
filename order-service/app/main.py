@@ -32,7 +32,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+#ovo je main file
 Instrumentator().instrument(app).expose(app)
 
 app.include_router(order_router.router)
